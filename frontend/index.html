@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Naxtwave Expense Dashboard</title>
+  <style>
+    body { font-family: Arial; padding:20px; }
+    table { width:100%; border-collapse: collapse; margin-top:20px;}
+    th, td { border:1px solid #ccc; padding:8px; text-align:center;}
+    button { padding:5px 10px; }
+  </style>
+</head>
+<body>
+
+<h2>Login</h2>
+<input id="email" placeholder="Email"><br><br>
+<input id="pass" placeholder="Password"><br><br>
+<button onclick="login()">Login</button>
+
+<div id="app" style="display:none;">
+  <h2>Naxtwave Dashboard</h2>
+  <h3>Total: ₹ <span id="total">0</span></h3>
+
+  <select id="filter" onchange="load()">
+    <option value="All">All Users</option>
+    <option>Kartik</option>
+    <option>Abhinav</option>
+    <option>Kurum</option>
+    <option>Ankit</option>
+  </select>
+
+  <h3>Add Expense</h3>
+  <input id="amount" placeholder="Amount">
+  <input id="note" placeholder="Note">
+  <button onclick="add()">Add</button>
+
+  <table>
+    <thead>
+      <tr><th>User</th><th>Amount</th><th>Note</th><th>Date</th><th>Action</th></tr>
+    </thead>
+    <tbody id="list"></tbody>
+  </table>
+</div>
+
+<script>
+let currentUser = "";
+
+function login(){
+  fetch("http://10.166.128.206:5000/login", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      email: email.value,
+      password: pass.value
+    })
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.email){
+      currentUser = d.name;
+      app.style.display="block";
+      load();
+    } else {
+      alert("Wrong");
+    }
+  });
+}
+
+function add(){
+  fetch("http://10.166.128.206:5000:5000/add", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      user: currentUser,
+      amount: amount.value,
+      note: note.value,
+      date: new Date().toLocaleDateString()
+    })
+  }).then(()=>load());
+}
+
+function del(id){
+  fetch("http://10.166.128.206:5000:5000/delete/"+id, {method:"DELETE"})
+  .then(()=>load());
+}
+
+function load(){
+  fetch("http://10.166.128.206:5000")
+  .then(r=>r.json())
+  .then(data=>{
+    list.innerHTML="";
+    let total = 0;
+    let filterVal = filter.value;
+
+    data.forEach(e=>{
+      if(filterVal==="All" || e.user===filterVal){
+        total += Number(e.amount);
+        list.innerHTML += `<tr>
+          <td>${e.user}</td>
+          <td>₹${e.amount}</td>
+          <td>${e.note}</td>
+          <td>${e.date}</td>
+          <td><button onclick="del('${e._id}')">❌</button></td>
+        </tr>`;
+      }
+    });
+
+    document.getElementById("total").innerText = total;
+  });
+}
+</script>
+
+</body>
+</html>
